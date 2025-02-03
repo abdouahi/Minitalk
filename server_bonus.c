@@ -1,76 +1,57 @@
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include "libft/libft.h"
+#include "minitalk.h"
 
-typedef struct s_server {
-    int     current_bit;
-    char    current_byte;
-    pid_t   client_pid;
-    char    *message;
-} t_server;
+static void	config_signals(void)
+{
+	struct sigaction	sa;
 
-static t_server g_data = {0};
-
-static void reset_state(void) {
-    free(g_data.message);
-    g_data.message = NULL;
-    g_data.current_bit = 0;
-    g_data.current_byte = 0;
-    g_data.client_pid = 0;
+	sa.sa_sigaction = handle_signal;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGUSR1);
+	sigaddset(&sa.sa_mask, SIGUSR2);
+	if (sigaction(SIGUSR1, &sa, NULL) < 0)
+		exit(1);
+	if (sigaction(SIGUSR2, &sa, NULL) < 0)
+		exit(1);
 }
 
-static void build_message(void) {
-    size_t len = g_data.message ? ft_strlen(g_data.message) : 0;
-    char *tmp = ft_realloc(g_data.message, len + 2);
-    
-    if (!tmp) {
-        reset_state();
-        return;
-    }
-    g_data.message = tmp;
-    g_data.message[len] = g_data.current_byte;
-    g_data.message[len + 1] = '\0';
+int	main(void)
+{
+	ft_printf("Server PID: %d\n", getpid());
+	config_signals();
+	while (1)
+		pause();
+	return (0);
 }
 
-static void finalize_message(void) {
-    ft_printf("%s\n", g_data.message);
-    reset_state();
-}
+void	handle_signal(int sig, siginfo_t *info, void *context)
+{
+	static int				bit_count;
+	static unsigned char	c;
+	static int				client_pid;
+	static char				*message;
 
-static void sig_handler(int sig, siginfo_t *info, void *context) {
-    (void)context;
-    if (g_data.client_pid && info->si_pid != g_data.client_pid) {
-        kill(info->si_pid, SIGUSR2);
-        return;
-    }
-
-    g_data.client_pid = info->si_pid;
-    g_data.current_byte = (g_data.current_byte << 1) | (sig == SIGUSR2);
-
-    if (++g_data.current_bit == 8) {
-        if (g_data.current_byte == '\0') 
-            finalize_message();
-        else 
-            build_message();
-        g_data.current_bit = 0;
-        g_data.current_byte = 0;
-    }
-    kill(g_data.client_pid, SIGUSR1);
-    if (g_data.current_byte == '\0')
-        kill(g_data.client_pid, SIGUSR2);
-}
-
-int main(void) {
-    ft_printf("Server PID: \033[92m%d\033[0m\n", getpid());
-    struct sigaction sa = {
-        .sa_sigaction = sig_handler,
-        .sa_flags = SA_SIGINFO
-    };
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGUSR2, &sa, NULL);
-
-    while (1) pause();
-    return 0;
+	(void)context;
+	if (client_pid != info->si_pid)
+	{
+		client_pid = info->si_pid;
+		bit_count = 0;
+		c = 0;
+		message = ft_calloc(1, 1);
+	}
+	c = (c << 1) | (sig == SIGUSR2);
+	if (++bit_count == 8)
+	{
+		if (c == 0)
+		{
+			ft_printf("%s\n", message);
+			free(message);
+			message = NULL;
+		}
+		else
+			message = ft_strjoin_char(message, c);
+		bit_count = 0;
+		c = 0;
+	}
+	kill(client_pid, SIGUSR1);
 }
