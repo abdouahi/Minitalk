@@ -1,28 +1,47 @@
-CC = cc
-CFLAGS = -Wall -Wextra -Werror
-LIBFT = libft/libft.a
-BONUS = client_bonus server_bonus
+NAME		= server client
+BONUS		= server_bonus client_bonus
 
-all: $(LIBFT) client server
+SRC_DIR		= src
+INC_DIR		= includes
+LIBFT_DIR	= libft
 
-bonus: $(LIBFT) $(BONUS)
+SRC			= client.c server.c
+BONUS_SRC	= client_bonus.c server_bonus.c
+
+CC			= cc
+CFLAGS		= -Wall -Wextra -Werror
+LIBFT		= $(LIBFT_DIR)/libft.a
+
+all:		$(NAME)
 
 $(LIBFT):
-	@make -C libft
+			@make -C $(LIBFT_DIR)
 
-client server: %: %.c $(LIBFT)
-	@$(CC) $(CFLAGS) $< -Llibft -lft -o $@
+server:		$(SRC_DIR)/server.o $(LIBFT)
+			$(CC) $(CFLAGS) $< $(LIBFT) -o $@
 
-client_bonus server_bonus: %_bonus: %_bonus.c $(LIBFT)
-	@$(CC) $(CFLAGS) $< -Llibft -lft -o $@
+client:		$(SRC_DIR)/client.o $(LIBFT)
+			$(CC) $(CFLAGS) $< $(LIBFT) -o $@
+
+bonus:		$(BONUS)
+
+server_bonus:	$(SRC_DIR)/server_bonus.o $(LIBFT)
+			$(CC) $(CFLAGS) $< $(LIBFT) -o $@
+
+client_bonus:	$(SRC_DIR)/client_bonus.o $(LIBFT)
+			$(CC) $(CFLAGS) $< $(LIBFT) -o $@
+
+%.o:		$(SRC_DIR)/%.c
+			$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
 clean:
-	@make -C libft clean
+			rm -f $(SRC_DIR)/*.o
+			@make -C $(LIBFT_DIR) clean
 
-fclean: clean
-	@rm -f client server client_bonus server_bonus
-	@make -C libft fclean
+fclean:		clean
+			rm -f $(NAME) $(BONUS)
+			@make -C $(LIBFT_DIR) fclean
 
-re: fclean all
+re:			fclean all
 
-.PHONY: all bonus clean fclean re
+.PHONY:		all clean fclean re bonus
