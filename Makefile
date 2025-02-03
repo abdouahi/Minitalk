@@ -1,25 +1,28 @@
 CC = cc
 CFLAGS = -Wall -Wextra -Werror
 LIBFT = libft/libft.a
+BONUS = client_bonus server_bonus
 
 all: $(LIBFT) client server
+
+bonus: $(LIBFT) $(BONUS)
 
 $(LIBFT):
 	@make -C libft
 
-client: client.c $(LIBFT)
-	@$(CC) $(CFLAGS) client.c -Llibft -lft -o client
+client server: %: %.c $(LIBFT)
+	@$(CC) $(CFLAGS) $< -Llibft -lft -o $@
 
-server: server.c $(LIBFT)
-	@$(CC) $(CFLAGS) server.c -Llibft -lft -o server
+client_bonus server_bonus: %_bonus: %_bonus.c $(LIBFT)
+	@$(CC) $(CFLAGS) $< -Llibft -lft -o $@
 
 clean:
 	@make -C libft clean
 
 fclean: clean
-	@rm -f client server
+	@rm -f client server client_bonus server_bonus
 	@make -C libft fclean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all bonus clean fclean re
