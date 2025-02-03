@@ -1,52 +1,81 @@
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include "libft/libft.h"
+#include "minitalk.h"
 
-volatile sig_atomic_t g_bit_ack = 0;
-volatile sig_atomic_t g_msg_ack = 0;
+static volatile sig_atomic_t	g_ack_received = 0;
 
-static void handle_bit_ack(int sig) { (void)sig; g_bit_ack = 1; }
-static void handle_msg_ack(int sig) { (void)sig; g_msg_ack = 1; }
-
-static void send_unicode(pid_t pid, const char *msg) {
-    for (; *msg; msg++) {
-        for (int i = 7; i >= 0; i--) {
-            g_bit_ack = 0;
-            kill(pid, ((*msg >> i) & 1) ? SIGUSR2 : SIGUSR1);
-            while (!g_bit_ack) {
-                usleep(50);
-                if (!g_bit_ack && kill(pid, 0) == -1) {
-                    ft_putstr_fd("Connection lost\n", 2);
-                    exit(EXIT_FAILURE);
-                }
-            }
-        }
-    }
+static void	ack_handler(int sig)
+{
+	(void)sig;
+	g_ack_received = 1;
 }
 
-int main(int argc, char **argv) {
-    if (argc != 3 || !ft_strisdigit(argv[1])) {
-        ft_printf("Usage: %s <PID> \"Message\"\n", argv[0]);
-        return EXIT_FAILURE;
-    }
+static void	send_bit(int pid, int bit)
+{
+	struct sigaction	sa;
 
-    struct sigaction sa_bit = {.sa_handler = handle_bit_ack};
-    struct sigaction sa_msg = {.sa_handler = handle_msg_ack};
-    sigaction(SIGUSR1, &sa_bit, NULL);
-    sigaction(SIGUSR2, &sa_msg, NULL);
+	sa.sa_handler = ack_handler;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGUSR1, &sa, NULL);
+	g_ack_received = 0;
+	if (bit)
+		kill(pid, SIGUSR2);
+	else
+		kill(pid, SIGUSR1);
+	while (!g_ack_received)
+		usleep(10);
+}
 
-    pid_t pid = ft_atoi(argv[1]);
-    const char *msg = argv[2];
+static void	send_unicode(int pid, wchar_t c)
+{
+	int	byte_count;
+	int	i;
 
-    send_unicode(pid, msg);
-    send_unicode(pid, "\0");
+	if (c <= 0x7F)
+		byte_count = 1;
+	else if (c <= 0x7FF)
+		byte_count = 2;
+	else if (c <= 0xFFFF)
+		byte_count = 3;
+	else
+		byte_count = 4;
+	i = byte_count;
+	while (i--)
+	{
+		send_byte(pid, (c >> (6 * i)) & 0x3F | (i ? 0x80 : 0xFF >> (8 - byte_count)));
+	}
+}
 
-    int timeout = 10000;
-    while (!g_msg_ack && timeout--) usleep(100);
-    if (!g_msg_ack) {
-        ft_putstr_fd("Error: Server timeout\n", 2);
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
+void	send_message(int pid, char *str)
+{
+	int		i;
+	char	c;
+
+	while (*str)
+	{
+		i = 8;
+		c = *str++;
+		while (i--)
+		{
+			send_bit(pid, (c >> i) & 1);
+		}
+	}
+	i = 8;
+	while (i--)
+		send_bit(pid, 0);
+}
+
+int	main(int argc, char **argv)
+{
+	int		pid;
+	char	*msg;
+
+	if (argc != 3)
+	{
+		ft_printf("Usage: %s <PID> <message>\n", argv[0]);
+		return (1);
+	}
+	pid = ft_atoi(argv[1]);
+	msg = argv[2];
+	send_message(pid, msg);
+	return (0);
 }
