@@ -1,231 +1,235 @@
 #!/bin/bash
-# test.sh - Advanced tester for the 42 School minitalk Project (Mandatory & Bonus)
-# This script compiles the project, then launches the server (mandatory or bonus)
-# and runs several tests (simple, long, Unicode, empty, multiple messages, rapid succession).
-# It includes timing measurements and detailed output for each test.
+# minitalk-ultimate-tester.sh - Ultimate Tester for 42 Minitalk Project
+# Features: Mandatory + Bonus tests, Detailed Reporting, Stress Tests, UI/UX
 
-# Global configuration
+# =========================================
+# Configuration
+# =========================================
 SERVER_LOG="server.log"
-USE_NANOSECONDS=1
+CLIENT_LOG="client.log"
+TEST_LOGS_DIR="test_logs"
+USE_COLORS=1
+TIMEOUT=5  # seconds to wait for server response
+STRESS_LENGTH=10000  # 10K characters for stress test
+MAX_CONCURRENT_CLIENTS=50  # For bonus stress test
 
-# --- Helper Functions ---
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-# Get current time in nanoseconds (or seconds if %N isn't supported)
-get_time() {
-    local t
-    t=$(date +%s%N 2>/dev/null)
-    if [[ $t =~ [^0-9] ]]; then
-        # Fallback: if %N produces non-digits, use seconds only.
-        t=$(date +%s)
-        USE_NANOSECONDS=0
-    fi
-    echo "$t"
+# =========================================
+# Helper Functions
+# =========================================
+print_header() {
+    echo -e "${BLUE}\n========================================"
+    echo -e "$1"
+    echo -e "========================================${NC}"
 }
 
-# --- Core Functions ---
+print_result() {
+    if [ "$1" == "success" ]; then
+        echo -e "${GREEN}✓ $2${NC}"
+    else
+        echo -e "${RED}✗ $2${NC}"
+    fi
+}
 
-# Compile the project via Makefile
+get_time_ms() {
+    date +%s%3N
+}
+
+wait_for_pid() {
+    local timeout=$TIMEOUT
+    while [ ! -s "$SERVER_LOG" ] && [ $timeout -gt 0 ]; do
+        sleep 0.1
+        ((timeout -= 1))
+    done
+    if [ ! -s "$SERVER_LOG" ]; then
+        echo -e "${RED}Server failed to start!${NC}"
+        exit 1
+    fi
+    grep -m1 -Eo '[0-9]+' "$SERVER_LOG"
+}
+
+cleanup() {
+    pkill -P $$ 2>/dev/null
+    rm -f "$SERVER_LOG" "$CLIENT_LOG"
+    [ -d "$TEST_LOGS_DIR" ] && rm -rf "$TEST_LOGS_DIR"
+}
+
+# =========================================
+# Core Testing Functions
+# =========================================
 compile_project() {
-    echo "Compiling project..."
-    if [ ! -f Makefile ]; then
-        echo "Makefile not found! Aborting."
-        exit 1
-    fi
-    make re
+    print_header "Compiling Project"
+    make re >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo "Compilation failed! Aborting tests."
+        print_result "error" "Compilation failed"
         exit 1
     fi
-    echo "Compilation successful!"
+    print_result "success" "Compilation successful"
 }
 
-# Launch the server using the chosen executable in the background
-launch_server() {
-    local server_exec=$1
-    echo "Starting the server ($server_exec)..."
-    > "$SERVER_LOG"
-    ./"$server_exec" > "$SERVER_LOG" 2>&1 &
-    SERVER_PID=$!
-    sleep 1
-    echo "Server started with PID: $SERVER_PID"
-}
-
-# Stop the server gracefully
-stop_server() {
-    echo "Stopping server (PID: $SERVER_PID)..."
-    kill -SIGTERM "$SERVER_PID" 2>/dev/null
-    sleep 1
-}
-
-# Clear the server log before tests
-clear_server_log() {
-    > "$SERVER_LOG"
-}
-
-# Run a single test
-# $1: test message to send
-# $2: expected pattern in the server log (substring expected)
-# $3: client executable (client or client_bonus)
-run_test() {
-    local test_msg="$1"
-    local expected="$2"
-    local client_exec="$3"
-
-    echo "Sending message: $test_msg"
-    clear_server_log
-
-    local start_time end_time elapsed_ns elapsed_ms
-    start_time=$(get_time)
-    ./"$client_exec" "$SERVER_PID" "$test_msg"
-    sleep 1
-    end_time=$(get_time)
-
-    if [ $USE_NANOSECONDS -eq 1 ]; then
-        elapsed_ns=$((end_time - start_time))
-        elapsed_ms=$((elapsed_ns / 1000000))
-    else
-        # Fallback to seconds resolution
-        elapsed_ms=$(( (end_time - start_time) * 1000 ))
+start_server() {
+    local server_type=$1
+    print_header "Starting $server_type Server"
+    ./$server_type > "$SERVER_LOG" 2>&1 &
+    SERVER_PID=$(wait_for_pid)
+    if [ -z "$SERVER_PID" ]; then
+        print_result "error" "Failed to get server PID"
+        exit 1
     fi
-
-    if grep -q "$expected" "$SERVER_LOG"; then
-        echo -e "Test result: \033[0;32m✅ PASS\033[0m (Time taken: ${elapsed_ms}ms)"
-    else
-        echo -e "Test result: \033[0;31m❌ FAIL\033[0m (Time taken: ${elapsed_ms}ms)"
-        echo "Expected pattern: $expected"
-        echo "Server log snippet:"
-        head -n 3 "$SERVER_LOG"
-    fi
+    print_result "success" "Server PID: $SERVER_PID"
 }
 
-# Run multiple consecutive messages test. Each message is expected in the server log.
-run_multiple_messages() {
-    local client_exec="$1"
-    local messages=("First message" "Second message (42 rules)" "Third message!" "Final message")
-    for msg in "${messages[@]}"; do
-        run_test "$msg" "$msg" "$client_exec"
-    done
-}
-
-# Run rapid-succession test: concurrently sends multiple messages and checks all are received.
-run_rapid_succession_test() {
-    local client_exec="$1"
-    local messages=("Rapid1" "Rapid2" "Rapid3" "Rapid4" "Rapid5")
-    clear_server_log
-    echo "Running rapid succession test..."
+send_message() {
+    local client=$1
+    local msg="$2"
+    local log_file="$TEST_LOGS_DIR/test_$(date +%s%N).log"
     
-    local start_time end_time elapsed_ns elapsed_ms
-    start_time=$(get_time)
-    for msg in "${messages[@]}"; do
-        ./"$client_exec" "$SERVER_PID" "$msg" &
+    echo "Sent:     '$msg'" > "$log_file"
+    ./$client $SERVER_PID "$msg" >> "$log_file" 2>&1
+    
+    local start_time=$(get_time_ms)
+    while true; do
+        grep -q "$msg" "$SERVER_LOG" && break
+        if [ $(($(get_time_ms) - start_time)) -gt $((TIMEOUT * 1000)) ]; then
+            echo "Timeout waiting for message" >> "$log_file"
+            return 1
+        fi
+        sleep 0.1
     done
-    wait
-    sleep 1
-    end_time=$(get_time)
+    
+    echo "Received: '$(grep -a "$msg" "$SERVER_LOG" | tail -1)'" >> "$log_file"
+    return 0
+}
 
-    if [ $USE_NANOSECONDS -eq 1 ]; then
-        elapsed_ns=$((end_time - start_time))
-        elapsed_ms=$((elapsed_ns / 1000000))
+# =========================================
+# Test Cases
+# =========================================
+run_basic_tests() {
+    local client=$1
+    print_header "Running Basic Tests"
+    
+    # Test 1: Short message
+    if send_message $client "Hello Minitalk!"; then
+        print_result "success" "Short message test passed"
     else
-        elapsed_ms=$(( (end_time - start_time) * 1000 ))
+        print_result "error" "Short message test failed"
     fi
 
-    local all_passed=true
-    for msg in "${messages[@]}"; do
-        if ! grep -q "$msg" "$SERVER_LOG"; then
-            echo "Message '$msg' not received."
-            all_passed=false
+    # Test 2: Empty message
+    if send_message $client ""; then
+        print_result "success" "Empty message test passed"
+    else
+        print_result "error" "Empty message test failed"
+    fi
+
+    # Test 3: Special characters
+    if send_message $client "~!@#$%^&*()_+{}|:<>?[]\;',./"; then
+        print_result "success" "Special chars test passed"
+    else
+        print_result "error" "Special chars test failed"
+    fi
+}
+
+run_unicode_tests() {
+    local client=$1
+    print_header "Running Unicode Tests"
+    
+    local unicode_msgs=(
+        "Hello 🌍 World"
+        "こんにちは世界"
+        "Привет мир"
+        "مرحبا بالعالم"
+        "😊✅🚀"
+    )
+
+    for msg in "${unicode_msgs[@]}"; do
+        if send_message $client "$msg"; then
+            print_result "success" "Unicode test: '$msg'"
+        else
+            print_result "error" "Unicode test failed: '$msg'"
         fi
     done
+}
 
-    if $all_passed; then
-        echo -e "Rapid succession test result: \033[0;32m✅ PASS\033[0m (Time taken: ${elapsed_ms}ms)"
+run_stress_tests() {
+    local client=$1
+    print_header "Running Stress Tests"
+    
+    # Generate random long string
+    local stress_msg=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c $STRESS_LENGTH)
+    
+    # Test 1: Long message
+    if send_message $client "$stress_msg"; then
+        print_result "success" "Long message ($STRESS_LENGTH chars)"
     else
-        echo -e "Rapid succession test result: \033[0;31m❌ FAIL\033[0m (Time taken: ${elapsed_ms}ms)"
-        echo "Server log snippet:"
-        head -n 5 "$SERVER_LOG"
+        print_result "error" "Long message test failed"
+    fi
+
+    # Test 2: High-speed messages
+    local start_time=$(get_time_ms)
+    for i in {1..100}; do
+        send_message $client "Message $i" &
+    done
+    wait
+    local duration=$(( $(get_time_ms) - start_time ))
+    print_result "info" "100 messages in ${duration}ms"
+
+    # Verify count
+    local received_count=$(grep -c "Message [0-9]" "$SERVER_LOG")
+    if [ $received_count -eq 100 ]; then
+        print_result "success" "Received 100/100 messages"
+    else
+        print_result "error" "Lost $((100 - received_count)) messages"
     fi
 }
 
-# Display the interactive tester menu
-show_menu() {
-    echo "========================================"
-    echo "   Minitalk Advanced Tester Menu"
-    echo "========================================"
-    echo "Test Mode: $TEST_MODE"
-    echo "Using server: $SERVER_EXEC and client: $CLIENT_EXEC"
-    echo "----------------------------------------"
-    echo "1) Send simple message"
-    echo "2) Send long message"
-    echo "3) Send Unicode message"
-    echo "4) Send empty message"
-    echo "5) Send multiple consecutive messages"
-    echo "6) Rapid succession messages test"
-    echo "7) Change test mode (Mandatory/Bonus)"
-    echo "8) Exit"
-    echo -n "Choose an option [1-8]: "
-}
-
-# Let the user select the test mode (Mandatory or Bonus)
-select_test_mode() {
-    echo "Select test mode:"
-    echo "1) Mandatory tests (using server & client)"
-    echo "2) Bonus tests (using server_bonus & client_bonus)"
-    read -r mode
-    if [ "$mode" == "2" ]; then
-        TEST_MODE="Bonus"
-        SERVER_EXEC="server_bonus"
-        CLIENT_EXEC="client_bonus"
+run_bonus_tests() {
+    print_header "Running Bonus Stress Test"
+    
+    local start_time=$(get_time_ms)
+    for i in $(seq $MAX_CONCURRENT_CLIENTS); do
+        ( ./client_bonus $SERVER_PID "Client $i: $(uuidgen)" ) &
+    done
+    wait
+    
+    local duration=$(( $(get_time_ms) - start_time ))
+    local received_count=$(grep -c "Client [0-9]" "$SERVER_LOG")
+    
+    if [ $received_count -eq $MAX_CONCURRENT_CLIENTS ]; then
+        print_result "success" "All $MAX_CONCURRENT_CLIENTS clients handled"
     else
-        TEST_MODE="Mandatory"
-        SERVER_EXEC="server"
-        CLIENT_EXEC="client"
+        print_result "error" "Lost $((MAX_CONCURRENT_CLIENTS - received_count)) clients"
     fi
+    print_result "info" "Bonus test completed in ${duration}ms"
 }
 
-# --- Main Script Flow ---
+# =========================================
+# Main Execution
+# =========================================
+trap cleanup EXIT
+mkdir -p "$TEST_LOGS_DIR"
 
-select_test_mode
+# Compile and test mandatory
 compile_project
-launch_server "$SERVER_EXEC"
+start_server "server"
+run_basic_tests "client"
+run_unicode_tests "client"
+run_stress_tests "client"
+pkill -P $$
 
-while true; do
-    show_menu
-    read -r option
-    case $option in
-        1)
-            run_test "Hello, minitalk!" "Hello, minitalk!" "$CLIENT_EXEC"
-            ;;
-        2)
-            long_message=$(printf 'LongMessage '%.0s {1..50})
-            run_test "$long_message" "LongMessage" "$CLIENT_EXEC"
-            ;;
-        3)
-            unicode_message="Hello, 🌍! こんにちは世界！Привет мир!?"
-            run_test "$unicode_message" "🌍" "$CLIENT_EXEC"
-            ;;
-        4)
-            run_test "" "" "$CLIENT_EXEC"
-            ;;
-        5)
-            run_multiple_messages "$CLIENT_EXEC"
-            ;;
-        6)
-            run_rapid_succession_test "$CLIENT_EXEC"
-            ;;
-        7)
-            stop_server
-            select_test_mode
-            launch_server "$SERVER_EXEC"
-            ;;
-        8)
-            echo "Exiting tests..."
-            stop_server
-            exit 0
-            ;;
-        *)
-            echo "Invalid option. Please choose between 1 and 8."
-            ;;
-    esac
-    echo ""
-done
+# Compile and test bonus
+compile_project
+start_server "server_bonus"
+run_basic_tests "client_bonus"
+run_unicode_tests "client_bonus"
+run_stress_tests "client_bonus"
+run_bonus_tests
+
+print_header "Testing Complete"
+echo -e "${GREEN}Check detailed logs in: $TEST_LOGS_DIR${NC}"
