@@ -49,11 +49,14 @@ wait_for_pid() {
         sleep 0.1
         ((timeout -= 1))
     done
-    if [ ! -s "$SERVER_LOG" ]; then
+    
+    # Extract PID from log file
+    local pid=$(grep -m1 -Eo '[0-9]+' "$SERVER_LOG")
+    if [ -z "$pid" ]; then
         echo -e "${RED}Server failed to start!${NC}"
         exit 1
     fi
-    grep -m1 -Eo '[0-9]+' "$SERVER_LOG"
+    echo "$pid"
 }
 
 cleanup() {
@@ -165,7 +168,7 @@ run_stress_tests() {
     print_header "Running Stress Tests"
     
     # Generate random long string
-    local stress_msg=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c $STRESS_LENGTH)
+    local stress_msg=$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c $STRESS_LENGTH)
     
     # Test 1: Long message
     if send_message $client "$stress_msg"; then
