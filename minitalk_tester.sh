@@ -32,8 +32,10 @@ print_header() {
 print_result() {
     if [ "$1" == "success" ]; then
         echo -e "${GREEN}✓ $2${NC}"
-    else
+    elif [ "$1" == "error" ]; then
         echo -e "${RED}✗ $2${NC}"
+    else
+        echo -e "${YELLOW}⚠ $2${NC}"
     fi
 }
 
@@ -76,6 +78,7 @@ compile_project() {
 start_server() {
     local server_type=$1
     print_header "Starting $server_type Server"
+    > "$SERVER_LOG"  # Clear the server log
     ./$server_type > "$SERVER_LOG" 2>&1 &
     SERVER_PID=$(wait_for_pid)
     if [ -z "$SERVER_PID" ]; then
