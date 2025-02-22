@@ -3,32 +3,40 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static volatile sig_atomic_t g_ack = 0;
+static volatile sig_atomic_t g_ack_received = 0;
 
 static void ack_handler(int sig)
 {
     (void)sig;
-    g_ack = 1;
+    g_ack_received = 1;
 }
 
-static void send_bit(pid_t pid, char bit)
+static void send_bit(pid_t pid, int bit)
 {
-    g_ack = 0;
-    if (kill(pid, bit ? SIGUSR2 : SIGUSR1) == -1)
-        exit(1);
-    while (!g_ack)
+    g_ack_received = 0;
+    if (bit)
+    {
+        if (kill(pid, SIGUSR2) == -1)
+            exit(1);
+    }
+    else
+    {
+        if (kill(pid, SIGUSR1) == -1)
+            exit(1);
+    }
+    while (!g_ack_received)
         pause();
 }
 
 static void send_char(pid_t pid, char c)
 {
-    int bit;
+    int bit_pos;
 
-    bit = 7;
-    while (bit >= 0)
+    bit_pos = 7;
+    while (bit_pos >= 0)
     {
-        send_bit(pid, (c >> bit) & 1);
-        bit--;
+        send_bit(pid, (c >> bit_pos) & 1);
+        bit_pos--;
     }
 }
 
@@ -47,7 +55,10 @@ int main(int argc, char **argv)
     pid_t pid = atoi(argv[1]);
     char *str = argv[2];
     while (*str)
-        send_char(pid, *str++);
+    {
+        send_char(pid, *str);
+        str++;
+    }
     send_char(pid, '\0');
     return (0);
 }
