@@ -10,7 +10,7 @@ typedef struct s_server {
     size_t      msg_len;
 }               t_server;
 
-static t_server g_data;
+static t_server g_data = {0, 0, NULL, 0};
 
 static void reset_state(void)
 {
@@ -18,11 +18,17 @@ static void reset_state(void)
     g_data.bit_pos = 0;
 }
 
-static void sig_handler(int sig, siginfo_t *info, void *context)
+static void handle_signal(int sig, siginfo_t *info, void *context)
 {
     (void)context;
     (void)info;
-    g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
+    int bit;
+
+    if (sig == SIGUSR1)
+        bit = 0;
+    else
+        bit = 1;
+    g_data.current_char |= (bit << (7 - g_data.bit_pos));
     g_data.bit_pos++;
     if (g_data.bit_pos == 8)
     {
@@ -49,7 +55,7 @@ static void sig_handler(int sig, siginfo_t *info, void *context)
 int main(void)
 {
     struct sigaction sa;
-    sa.sa_sigaction = sig_handler;
+    sa.sa_sigaction = handle_signal;
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
     sigaction(SIGUSR1, &sa, NULL);
