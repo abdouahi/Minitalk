@@ -2,16 +2,16 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 typedef struct s_server {
-    pid_t           client_pid;
-    unsigned char   current_char;
-    char            *message;
-    int             bit_count;
+    char        current_char;
+    int         bit_count;
+    pid_t       client_pid;
+    char        *message;
+    int         lock;
 }               t_server;
 
-static t_server g_server = {0, 0, NULL, 0};
+static t_server g_data = {0};
 
 static void send_ack(pid_t pid) {
     if (kill(pid, SIGUSR1) == -1) {
@@ -19,56 +19,73 @@ static void send_ack(pid_t pid) {
     }
 }
 
+static void reset_server(void) {
+    free(g_data.message);
+    g_data.message = NULL;
+    g_data.current_char = 0;
+    g_data.bit_count = 0;
+    g_data.client_pid = 0;
+}
+
 static void handle_signal(int sig, siginfo_t *info, void *context) {
     (void)context;
-    g_server.client_pid = info->si_pid;
-    if (sig == SIGUSR1)
-        g_server.current_char |= 0 << g_server.bit_count;
-    else
-        g_server.current_char |= 1 << g_server.bit_count;
-    g_server.bit_count++;
-    if (g_server.bit_count == 8) {
-        if (g_server.current_char == '\0') {
-            write(1, g_server.message, strlen(g_server.message));
-            write(1, "\n", 1);
-            free(g_server.message);
-            g_server.message = NULL;
+    if (g_data.lock) return;
+    g_data.lock = 1;
+
+    if (g_data.client_pid && info->si_pid != g_data.client_pid) {
+        send_ack(info->si_pid);
+        g_data.lock = 0;
+        return;
+    }
+
+    g_data.client_pid = info->si_pid;
+    if (sig == SIGUSR2) {
+        g_data.current_char |= 1 << g_data.bit_count;
+    }
+    g_data.bit_count++;
+
+    if (g_data.bit_count == 8) {
+        if (g_data.current_char == '\0') {
+            write(STDOUT_FILENO, g_data.message, strlen(g_data.message));
+            write(STDOUT_FILENO, "\n", 1);
+            reset_server();
         } else {
-            char *temp = g_server.message;
-            g_server.message = malloc((g_server.message ? strlen(g_server.message) : 0) + 2);
-            if (!g_server.message) {
-                free(temp);
+            char *new_msg = realloc(g_data.message, 
+                (g_data.message ? strlen(g_data.message) : 0) + 2);
+            if (!new_msg) {
+                free(g_data.message);
                 exit(EXIT_FAILURE);
             }
-            if (temp) {
-                strcpy(g_server.message, temp);
-                free(temp);
-            } else {
-                g_server.message[0] = '\0';
-            }
-            strncat(g_server.message, &g_server.current_char, 1);
+            g_data.message = new_msg;
+            size_t len = strlen(g_data.message);
+            g_data.message[len] = g_data.current_char;
+            g_data.message[len + 1] = '\0';
         }
-        g_server.current_char = 0;
-        g_server.bit_count = 0;
+        g_data.current_char = 0;
+        g_data.bit_count = 0;
     }
-    send_ack(g_server.client_pid);
+    send_ack(g_data.client_pid);
+    g_data.lock = 0;
 }
 
 int main(void) {
     struct sigaction sa;
-    sigemptyset(&sa.sa_mask);
+    char pid_str[20];
+
+    memset(&sa, 0, sizeof(sa));
     sa.sa_sigaction = handle_signal;
     sa.sa_flags = SA_SIGINFO;
 
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGUSR2, &sa, NULL);
+    if (sigaction(SIGUSR1, &sa, NULL) == -1 ||
+        sigaction(SIGUSR2, &sa, NULL) == -1) {
+        write(STDERR_FILENO, "Sigaction error\n", 16);
+        return 1;
+    }
 
-    write(1, "Server PID: ", 12);
-    char pid_str[20];
-    int len = sprintf(pid_str, "%d\n", getpid());
-    write(1, pid_str, len);
+    int len = snprintf(pid_str, 20, "%d\n", getpid());
+    write(STDOUT_FILENO, "Server PID: ", 12);
+    write(STDOUT_FILENO, pid_str, len);
 
-    while (1)
-        pause();
+    while (1) pause();
     return 0;
 }
