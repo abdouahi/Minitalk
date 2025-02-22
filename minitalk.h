@@ -1,16 +1,24 @@
-#ifndef MINITALK_H
-# define MINITALK_H
+CC = cc
+CFLAGS = -Wall -Wextra -Werror
 
-# include <unistd.h>
-# include <signal.h>
-# include <stdlib.h>
-# include "libft/libft.h"
+SERVER = server
+CLIENT = client
+SRV_SRC = server.c
+CLI_SRC = client.c
 
-// Server Prototypes
-void	handle_signal(int sig, siginfo_t *info, void *context);
+all: $(SERVER) $(CLIENT)
 
-// Client Prototypes
-void	send_bit(int pid, int bit);
-void	send_message(int pid, char *str);
+$(SERVER):
+	$(CC) $(CFLAGS) $(SRV_SRC) -o $(SERVER)
 
-#endif
+$(CLIENT):
+	$(CC) $(CFLAGS) $(CLI_SRC) -o $(CLIENT)
+
+clean:
+	rm -f $(SERVER) $(CLIENT)
+
+fclean: clean
+
+re: fclean all
+
+.PHONY: all clean fclean re
