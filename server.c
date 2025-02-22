@@ -20,20 +20,19 @@ static void reset_state(void) {
 static void handle_signal(int sig, siginfo_t *info, void *context) {
     (void)context;
     (void)info;
-    int bit = (sig == SIGUSR2);
-
-    g_data.current_char |= (bit << (7 - g_data.bit_pos));
+    g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
     g_data.bit_pos++;
+
     if (g_data.bit_pos == 8) {
         if (g_data.current_char == '\0') {
-            write(STDOUT_FILENO, g_data.message, g_data.msg_len);
-            write(STDOUT_FILENO, "\n", 1);
+            write(1, g_data.message, g_data.msg_len);
+            write(1, "\n", 1);
             free(g_data.message);
             g_data.message = NULL;
             g_data.msg_len = 0;
         } else {
             char *tmp = realloc(g_data.message, g_data.msg_len + 1);
-            if (!tmp) exit(EXIT_FAILURE);
+            if (!tmp) exit(1);
             g_data.message = tmp;
             g_data.message[g_data.msg_len++] = g_data.current_char;
         }
@@ -48,9 +47,7 @@ int main(void) {
     sigemptyset(&sa.sa_mask);
     sigaction(SIGUSR1, &sa, NULL);
     sigaction(SIGUSR2, &sa, NULL);
-
     printf("Server PID: %d\n", getpid());
-    while (1)
-        pause();
+    while (1) pause();
     return (0);
 }
