@@ -3,34 +3,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static volatile sig_atomic_t g_ack_received = 0;
+static volatile sig_atomic_t g_ack = 0;
 
 static void ack_handler(int sig) {
     (void)sig;
-    g_ack_received = 1;
+    g_ack = 1;
 }
 
 static void send_bit(pid_t pid, int bit) {
-    g_ack_received = 0;
-    if (bit) {
-        if (kill(pid, SIGUSR2) == -1) exit(EXIT_FAILURE);
-    } else {
-        if (kill(pid, SIGUSR1) == -1) exit(EXIT_FAILURE);
-    }
-    while (!g_ack_received) pause();
+    g_ack = 0;
+    if (kill(pid, bit ? SIGUSR2 : SIGUSR1) == -1) exit(1);
+    while (!g_ack) pause(); // Wait for acknowledgment
 }
 
 static void send_char(pid_t pid, char c) {
-    int bit_pos = 7;
-    while (bit_pos >= 0) {
-        send_bit(pid, (c >> bit_pos) & 1);
-        bit_pos--;
+    for (int i = 7; i >= 0; i--) {
+        send_bit(pid, (c >> i) & 1);
     }
 }
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        write(STDERR_FILENO, "Usage: ./client_bonus <PID> <message>\n", 38);
+        fprintf(stderr, "Usage: %s <PID> <message>\n", argv[0]);
         return (1);
     }
     struct sigaction sa;
@@ -41,10 +35,7 @@ int main(int argc, char **argv) {
 
     pid_t pid = atoi(argv[1]);
     char *str = argv[2];
-    while (*str) {
-        send_char(pid, *str);
-        str++;
-    }
+    while (*str) send_char(pid, *str++);
     send_char(pid, '\0');
     return (0);
 }
