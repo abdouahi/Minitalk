@@ -1,18 +1,15 @@
-CC = cc
-CFLAGS = -Wall -Wextra -Werror
-SERVER = server
-CLIENT = client
+NAME = server client
 
-all: $(SERVER) $(CLIENT)
+all: $(NAME)
 
-$(SERVER):
-	$(CC) $(CFLAGS) server.c -o $(SERVER)
+server:
+	cc -Wall -Wextra -Werror server.c -o server
 
-$(CLIENT):
-	$(CC) $(CFLAGS) client.c -o $(CLIENT)
+client:
+	cc -Wall -Wextra -Werror client.c -o client
 
 clean:
-	rm -f $(SERVER) $(CLIENT)
+	rm -f $(NAME)
 
 fclean: clean
 
