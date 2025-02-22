@@ -2,79 +2,68 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
-#define MAX_CLIENTS 10
+typedef struct s_server {
+    char        current_char;
+    int         bit_pos;
+    char        *message;
+    size_t      msg_len;
+    pid_t       client_pid;
+}               t_server;
 
-typedef struct {
-    pid_t pid;
-    char buffer[1024];
-    int buffer_index;
-    char current_char;
-    int bit_count;
-} client_state;
+static t_server g_data;
 
-static client_state clients[MAX_CLIENTS];
-
-static client_state *get_client(pid_t pid) {
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (clients[i].pid == pid) return &clients[i];
-        if (clients[i].pid == 0) {
-            clients[i].pid = pid;
-            clients[i].buffer_index = 0;
-            clients[i].bit_count = 0;
-            clients[i].current_char = 0;
-            return &clients[i];
-        }
-    }
-    return NULL;
+static void reset_state(void)
+{
+    g_data.current_char = 0;
+    g_data.bit_pos = 0;
 }
 
-static void signal_handler(int sig, siginfo_t *info, void *context) {
+static void send_ack(void)
+{
+    if (kill(g_data.client_pid, SIGUSR1) == -1)
+        exit(1);
+}
+
+static void sig_handler(int sig, siginfo_t *info, void *context)
+{
     (void)context;
-    client_state *client = get_client(info->si_pid);
-    if (!client) return;
-
-    client->current_char |= (sig == SIGUSR1) << client->bit_count;
-    client->bit_count++;
-
-    if (client->bit_count == 8) {
-        if (client->buffer_index < sizeof(client->buffer) - 1) {
-            client->buffer[client->buffer_index++] = client->current_char;
+    g_data.client_pid = info->si_pid;
+    g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
+    g_data.bit_pos++;
+    if (g_data.bit_pos == 8)
+    {
+        if (g_data.current_char == '\0')
+        {
+            write(1, g_data.message, g_data.msg_len);
+            write(1, "\n", 1);
+            free(g_data.message);
+            g_data.message = NULL;
+            g_data.msg_len = 0;
         }
-
-        if (client->current_char == '\0') {
-            write(STDOUT_FILENO, client->buffer, client->buffer_index - 1);
-            write(STDOUT_FILENO, "\n", 1);
-            client->pid = 0;
-        } else if (client->buffer_index >= sizeof(client->buffer) - 1) {
-            write(STDOUT_FILENO, client->buffer, sizeof(client->buffer) - 1);
-            write(STDOUT_FILENO, "\n", 1);
-            client->buffer_index = 0;
+        else
+        {
+            char *tmp = realloc(g_data.message, g_data.msg_len + 1);
+            if (!tmp)
+                exit(1);
+            g_data.message = tmp;
+            g_data.message[g_data.msg_len++] = g_data.current_char;
         }
-
-        client->current_char = 0;
-        client->bit_count = 0;
+        reset_state();
     }
-
-    kill(info->si_pid, SIGUSR1);
+    send_ack();
 }
 
-int main(void) {
+int main(void)
+{
     struct sigaction sa;
-    memset(clients, 0, sizeof(clients));
-
-    sa.sa_sigaction = signal_handler;
+    sa.sa_sigaction = sig_handler;
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGUSR1, &sa, NULL) == -1 || sigaction(SIGUSR2, &sa, NULL) == -1) {
-        perror("sigaction");
-        return EXIT_FAILURE;
-    }
-
+    sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
     printf("Server PID: %d\n", getpid());
-    while (1) pause();
-
-    return EXIT_SUCCESS;
+    while (1)
+        pause();
+    return (0);
 }
