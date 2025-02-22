@@ -2,75 +2,60 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
-typedef struct {
-    char buffer[1024];
-    int buffer_index;
-    char current_char;
-    int bit_count;
-    pid_t client_pid;
-} client_state;
+typedef struct s_server {
+    char        current_char;
+    int         bit_pos;
+    char        *message;
+    size_t      msg_len;
+}               t_server;
 
-static client_state state = { .buffer_index = 0, .bit_count = 0, .client_pid = 0 };
+static t_server g_data;
 
-static void reset_state() {
-    state.buffer_index = 0;
-    state.bit_count = 0;
-    state.client_pid = 0;
-    memset(state.buffer, 0, sizeof(state.buffer));
+static void reset_state(void)
+{
+    g_data.current_char = 0;
+    g_data.bit_pos = 0;
 }
 
-static void signal_handler(int sig, siginfo_t *info, void *context) {
+static void sig_handler(int sig, siginfo_t *info, void *context)
+{
     (void)context;
-
-    if (state.client_pid == 0)
-        state.client_pid = info->si_pid;
-    else if (state.client_pid != info->si_pid) {
+    (void)info;
+    g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
+    g_data.bit_pos++;
+    if (g_data.bit_pos == 8)
+    {
+        if (g_data.current_char == '\0')
+        {
+            write(1, g_data.message, g_data.msg_len);
+            write(1, "\n", 1);
+            free(g_data.message);
+            g_data.message = NULL;
+            g_data.msg_len = 0;
+        }
+        else
+        {
+            char *tmp = realloc(g_data.message, g_data.msg_len + 1);
+            if (!tmp)
+                exit(1);
+            g_data.message = tmp;
+            g_data.message[g_data.msg_len++] = g_data.current_char;
+        }
         reset_state();
-        state.client_pid = info->si_pid;
     }
-
-    state.current_char |= (sig == SIGUSR1) << state.bit_count;
-    state.bit_count++;
-
-    if (state.bit_count == 8) {
-        if (state.buffer_index < sizeof(state.buffer) - 1) {
-            state.buffer[state.buffer_index] = state.current_char;
-            state.buffer_index++;
-        }
-
-        if (state.current_char == '\0') {
-            write(STDOUT_FILENO, state.buffer, state.buffer_index - 1);
-            write(STDOUT_FILENO, "\n", 1);
-            reset_state();
-        } else if (state.buffer_index >= sizeof(state.buffer) - 1) {
-            write(STDOUT_FILENO, state.buffer, sizeof(state.buffer) - 1);
-            write(STDOUT_FILENO, "\n", 1);
-            reset_state();
-        }
-
-        state.current_char = 0;
-        state.bit_count = 0;
-    }
-
-    kill(info->si_pid, SIGUSR1);
 }
 
-int main(void) {
+int main(void)
+{
     struct sigaction sa;
-
-    sa.sa_sigaction = signal_handler;
+    sa.sa_sigaction = sig_handler;
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGUSR1, &sa, NULL) == -1 || sigaction(SIGUSR2, &sa, NULL) == -1) {
-        perror("sigaction");
-        return EXIT_FAILURE;
-    }
-
+    sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
     printf("Server PID: %d\n", getpid());
-    while (1) pause();
-
-    return EXIT_SUCCESS;
+    while (1)
+        pause();
+    return (0);
 }
