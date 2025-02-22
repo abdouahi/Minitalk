@@ -11,7 +11,7 @@ typedef struct s_server {
     pid_t       client_pid;
 }               t_server;
 
-static t_server g_data;
+static t_server g_data = {0, 0, NULL, 0, 0};
 
 static void reset_state(void)
 {
@@ -25,11 +25,17 @@ static void send_ack(void)
         exit(1);
 }
 
-static void sig_handler(int sig, siginfo_t *info, void *context)
+static void handle_signal(int sig, siginfo_t *info, void *context)
 {
     (void)context;
+    int bit;
+
     g_data.client_pid = info->si_pid;
-    g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
+    if (sig == SIGUSR1)
+        bit = 0;
+    else
+        bit = 1;
+    g_data.current_char |= (bit << (7 - g_data.bit_pos));
     g_data.bit_pos++;
     if (g_data.bit_pos == 8)
     {
@@ -57,7 +63,7 @@ static void sig_handler(int sig, siginfo_t *info, void *context)
 int main(void)
 {
     struct sigaction sa;
-    sa.sa_sigaction = sig_handler;
+    sa.sa_sigaction = handle_signal;
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
     sigaction(SIGUSR1, &sa, NULL);
