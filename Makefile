@@ -1,27 +1,25 @@
-CC = cc
-CFLAGS = -Wall -Wextra -Werror
+NAME = server client
+BONUS = server_bonus client_bonus
 
-all: server client server_bonus client_bonus
+all: $(NAME)
 
-server: server.c
-	$(CC) $(CFLAGS) -o $@ $<
+bonus: $(BONUS)
 
-client: client.c
-	$(CC) $(CFLAGS) -o $@ $<
+server:
+	cc -Wall -Wextra -Werror server.c -o server
 
-server_bonus: server_bonus.c
-	$(CC) $(CFLAGS) -o $@ $<
+client:
+	cc -Wall -Wextra -Werror client.c -o client
 
-client_bonus: client_bonus.c
-	$(CC) $(CFLAGS) -o $@ $<
+server_bonus:
+	cc -Wall -Wextra -Werror server_bonus.c -o server_bonus
 
-bonus: server_bonus client_bonus
+client_bonus:
+	cc -Wall -Wextra -Werror client_bonus.c -o client_bonus
 
 clean:
-	rm -f server client server_bonus client_bonus
+	rm -f $(NAME) $(BONUS)
 
 fclean: clean
 
 re: fclean all
-
-.PHONY: all clean fclean re bonus
