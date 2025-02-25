@@ -1,24 +1,29 @@
-CC = cc
-CFLAGS = -Wall -Wextra -Werror
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   minitalk.h                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
+/*   Updated: 2025/02/23 19:22:00 by abdouahi         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-SERVER = server
-CLIENT = client
-SRV_SRC = server.c
-CLI_SRC = client.c
+#ifndef MINITALK_H
+# define MINITALK_H
 
-all: $(SERVER) $(CLIENT)
+# include <signal.h>
+# include <unistd.h>
+# include <stdlib.h>
+# include <stdio.h>
 
-$(SERVER):
-	$(CC) $(CFLAGS) $(SRV_SRC) -o $(SERVER)
+typedef struct s_server
+{
+	char	current_char;
+	int		bit_pos;
+	char	*message;
+	size_t	msg_len;
+}	t_server;
 
-$(CLIENT):
-	$(CC) $(CFLAGS) $(CLI_SRC) -o $(CLIENT)
-
-clean:
-	rm -f $(SERVER) $(CLIENT)
-
-fclean: clean
-
-re: fclean all
-
-.PHONY: all clean fclean re
+#endif
