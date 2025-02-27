@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:03 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 22:59:26 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 23:19:02 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ int	main(int argc, char **argv)
 
 	if (argc != 3)
 	{
-		write(2, "Usage: ./client <PID> <message>\n", 32);
+		ft_printf("Usage: ./client <PID> <message>\n");
 		return (1);
 	}
 	pid = ft_atoi(argv[1]);

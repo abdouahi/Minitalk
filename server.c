@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 22:59:15 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 23:18:46 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ int	main(void)
 	sa.sa_flags = SA_SIGINFO;
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
-	printf("Server PID: %d\n", getpid());
+	ft_printf("Server PID: %d\n", getpid());
 	while (1)
 		pause();
 	return (0);
