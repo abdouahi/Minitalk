@@ -1,33 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minitalk.h                                         :+:      :+:    :+:   */
+/*   ft_putnbr_unsigned.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 17:21:36 by abdouahi         ###   ########.fr       */
+/*   Created: 2024/11/22 13:11:47 by abdouahi          #+#    #+#             */
+/*   Updated: 2024/12/03 12:29:43 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef MINITALK_H
-# define MINITALK_H
+#include "ft_printf.h"
 
-# include <signal.h>
-# include <unistd.h>
-# include <stdlib.h>
-# include <stdio.h>
-# include <limits.h>
-
-typedef struct s_server
+int	ft_putnbr_unsigned(unsigned int n)
 {
-	char	current_char;
-	int		bit_pos;
-	char	*message;
-	size_t	msg_len;
-}	t_server;
+	int	count;
 
-
-int		ft_atoi(char *str);
-
-#endif
+	count = 0;
+	if (n == 0)
+	{
+		ft_putchar('0');
+		return (1);
+	}
+	if (n >= 10)
+		count += ft_putnbr_unsigned(n / 10);
+	count += ft_putchar(n % 10 + '0');
+	return (count);
+}

@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 16:52:52 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 17:21:45 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ int	main(int ac, char **av)
 {
 	struct sigaction	sa;
 
-	*av = ft_strdup("");
+	*av = "";
 	if(ac > 1)
 		exit(1);
 	sa = (struct sigaction){0};

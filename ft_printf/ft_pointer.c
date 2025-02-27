@@ -1,33 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minitalk.h                                         :+:      :+:    :+:   */
+/*   ft_pointer.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 17:21:36 by abdouahi         ###   ########.fr       */
+/*   Created: 2024/11/21 12:05:26 by abdouahi          #+#    #+#             */
+/*   Updated: 2024/11/23 17:09:27 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef MINITALK_H
-# define MINITALK_H
+#include "ft_printf.h"
 
-# include <signal.h>
-# include <unistd.h>
-# include <stdlib.h>
-# include <stdio.h>
-# include <limits.h>
-
-typedef struct s_server
+int	ft_pointer(void *ptr)
 {
-	char	current_char;
-	int		bit_pos;
-	char	*message;
-	size_t	msg_len;
-}	t_server;
+	int	count;
 
-
-int		ft_atoi(char *str);
-
-#endif
+	count = 0;
+	count += write(1, "0x", 2);
+	count += ft_putnbr_hex((unsigned long)ptr, 0);
+	return (count);
+}

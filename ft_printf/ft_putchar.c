@@ -1,47 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_atoi.c                                          :+:      :+:    :+:   */
+/*   ft_putchar.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/27 16:03:35 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 17:21:40 by abdouahi         ###   ########.fr       */
+/*   Created: 2024/11/11 12:26:23 by abdouahi          #+#    #+#             */
+/*   Updated: 2024/11/23 16:53:08 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
+#include "ft_printf.h"
 
-int	is_a_digit(char *str)
+int	ft_putchar(char c)
 {
-	int	i;
-	int	j;
-
-	j = 0;
-	i = 0;
-	while ((str[i] >= '0' && str[i] <= '9'))
-		i++;
-	if (i == j)
-		return (0);
+	write(1, &c, 1);
 	return (1);
-}
-
-int	ft_atoi(char *str)
-{
-	int		res;
-	int		sign;
-	int 	i;
-
-	i = 0;
-	sign = 1;
-	res = 0;
-	is_a_digit(str);
-	if ((str[i] == '-' || str[i] == '+' ))
-		exit(1);
-	while (str[i] >= '0' && str[i] <= '9')
-	{
-		res = res * 10 + str[i] - '0';
-		i++;
-	}
-	return (res * sign);
 }

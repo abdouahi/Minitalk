@@ -4,7 +4,7 @@ CLIENT = client
 
 SERVER_SRC = server.c
 CLIENT_SRC = client.c
-COMMON_SRC = ft_atoi.c ft_strdup.c
+COMMON_SRC = ft_atoi.c
 
 
 SERVER_OBJ = $(SERVER_SRC:.c=.o)
@@ -13,19 +13,17 @@ COMMON_OBJ = $(COMMON_SRC:.c=.o)
 
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror
-FSANITIZE = -fsanitize=address
-
+CFLAGS = -Wall -Wextra -Werror -fsanitize=address
 
 all: $(SERVER) $(CLIENT)
 
 
 $(SERVER): $(SERVER_OBJ) $(COMMON_OBJ)
-	$(CC) $(CFLAGS) $(FSANITIZE) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 
 $(CLIENT): $(CLIENT_OBJ) $(COMMON_OBJ)
-	$(CC) $(CFLAGS) $(FSANITIZE) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 
 %.o: %.c minitalk.h
@@ -41,7 +39,4 @@ fclean: clean
 
 re: fclean all
 
-debug: CFLAGS += -g
-debug: all
-
-.PHONY: all clean fclean re debug
+.PHONY: all clean fclean re

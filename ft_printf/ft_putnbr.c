@@ -1,33 +1,42 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minitalk.h                                         :+:      :+:    :+:   */
+/*   ft_putnbr.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 17:21:36 by abdouahi         ###   ########.fr       */
+/*   Created: 2024/11/11 12:26:25 by abdouahi          #+#    #+#             */
+/*   Updated: 2024/11/22 16:50:06 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef MINITALK_H
-# define MINITALK_H
+#include "ft_printf.h"
 
-# include <signal.h>
-# include <unistd.h>
-# include <stdlib.h>
-# include <stdio.h>
-# include <limits.h>
-
-typedef struct s_server
+int	ft_putnbr(int n)
 {
-	char	current_char;
-	int		bit_pos;
-	char	*message;
-	size_t	msg_len;
-}	t_server;
+	int	count;
+	int	num;
 
-
-int		ft_atoi(char *str);
-
-#endif
+	num = n;
+	count = 0;
+	if (num == -2147483648)
+	{
+		count = write(1, "-2147483648", 11);
+		return (count);
+	}
+	if (num < 0)
+	{
+		count += ft_putchar('-');
+		num *= -1;
+	}
+	if (num >= 0 && num <= 9)
+	{
+		count += ft_putchar(num + '0');
+	}
+	if (num >= 10)
+	{
+		count += ft_putnbr(num / 10);
+		count += ft_putnbr(num % 10);
+	}
+	return (count);
+}
