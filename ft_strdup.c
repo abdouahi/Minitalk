@@ -1,35 +1,42 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minitalk.h                                         :+:      :+:    :+:   */
+/*   ft_strdup.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 16:58:00 by abdouahi         ###   ########.fr       */
+/*   Created: 2025/02/27 16:52:08 by abdouahi          #+#    #+#             */
+/*   Updated: 2025/02/27 16:57:34 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef MINITALK_H
-# define MINITALK_H
+#include "minitalk.h"
 
-# include <signal.h>
-# include <unistd.h>
-# include <stdlib.h>
-# include <stdio.h>
-# include <limits.h>
-
-typedef struct s_server
+int	ft_strlen(char *str)
 {
-	char	current_char;
-	int		bit_pos;
-	char	*message;
-	size_t	msg_len;
-}	t_server;
+	int i = 0;
+	
+	while(str[i])
+		i++;
+	return i;
+}
 
+char	*ft_strdup(char *s1)
+{
+	int		len;
+	int		i;
+	char	*dup;
 
-int		ft_atoi(char *str);
-char	*ft_strdup(char *s1);
-int		ft_strlen(char *str);
-
-#endif
+	len = 0;
+	i = 0;
+	len = ft_strlen(s1);
+	dup = (char *)malloc((len + 1) * sizeof(char));
+	if (dup == 0)
+		return (0);
+	while (i <= len)
+	{
+		dup[i] = s1[i];
+		i++;
+	}
+	return (dup);
+}
