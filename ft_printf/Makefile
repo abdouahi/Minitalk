@@ -1,6 +1,6 @@
 CC = cc
 FLAGS = -Wall -Wextra -Werror
-NAME = libftprintf.a
+NAME = libftft_printf.a
 RM = rm -f
 AR = ar rcs
 

@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 17:21:36 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 22:59:18 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <limits.h>
+#include "ft_printf/ft_printf.h"
 
 typedef struct s_server
 {
