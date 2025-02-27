@@ -1,12 +1,15 @@
 NAME = server client
 
+CFLAGS = -Wall -Wextra -Werror -fsanitize=address
+LDFLAGS = -fsanitize=address
+
 all: $(NAME)
 
 server:
-	cc -Wall -Wextra -Werror server.c -o server
+	cc $(CFLAGS) server.c -o server $(LDFLAGS)
 
 client:
-	cc -Wall -Wextra -Werror client.c -o client
+	cc $(CFLAGS) client.c -o client $(LDFLAGS)
 
 clean:
 	rm -f $(NAME)

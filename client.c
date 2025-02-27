@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:03 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/23 19:15:03 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 16:06:28 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ static	void	send_bit(pid_t pid, int bit)
 		signal = SIGUSR1;
 	if (kill(pid, signal) == -1)
 		exit(EXIT_FAILURE);
-	usleep(150);
+	usleep(20);
 }
 
 static void	send_char(pid_t pid, char c)
@@ -47,7 +47,7 @@ int	main(int argc, char **argv)
 		write(2, "Usage: ./client <PID> <message>\n", 32);
 		return (1);
 	}
-	pid = atoi(argv[1]);
+	pid = ft_atoi(argv[1]);
 	str = argv[2];
 	while (*str)
 		send_char(pid, *str++);

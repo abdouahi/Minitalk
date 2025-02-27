@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/24 17:55:14 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/02/27 15:52:40 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,10 +62,13 @@ static void	handle_signal(int sig, siginfo_t *info, void *context)
 	}
 }
 
-int	main(void)
+int	main(int ac, char **av)
 {
 	struct sigaction	sa;
 
+	*av = "";
+	if(ac > 1)
+		exit(1);
 	sa = (struct sigaction){0};
 	sa.sa_sigaction = handle_signal;
 	sa.sa_flags = SA_SIGINFO;
