@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:03 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 23:19:02 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/09 23:59:13 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,16 @@ static	void	send_bit(pid_t pid, int bit)
 {
 	int	signal;
 
+	(void)pid;
 	if (bit)
 		signal = SIGUSR2;
 	else
 		signal = SIGUSR1;
 	if (kill(pid, signal) == -1)
+	{
+		ft_printf("asi asi asiiir t");
 		exit(EXIT_FAILURE);
+	}
 	usleep(150);
 }
 

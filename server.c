@@ -6,59 +6,33 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 23:18:46 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/10 00:03:46 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk.h"
 
-static t_server	g_data = {0, 0, NULL, 0};
-
-static void	reset_state(void)
-{
-	g_data.current_char = 0;
-	g_data.bit_pos = 0;
-}
-
-static void	append_char(char c)
-{
-	char	*new_msg;
-	size_t	i;
-
-	new_msg = malloc(g_data.msg_len + 1);
-	if (!new_msg)
-		exit(EXIT_FAILURE);
-	i = 0;
-	while (i < g_data.msg_len)
-	{
-		new_msg[i] = g_data.message[i];
-		i++;
-	}
-	new_msg[g_data.msg_len] = c;
-	free(g_data.message);
-	g_data.message = new_msg;
-	g_data.msg_len++;
-}
-
 static void	handle_signal(int sig, siginfo_t *info, void *context)
 {
-	(void)info;
+	static int				client_pid = 0;
+	static unsigned char	c = 0;
+	static int				bit = 0;
+
 	(void)context;
-	g_data.current_char |= (sig == SIGUSR2) << (7 - g_data.bit_pos);
-	g_data.bit_pos++;
-	if (g_data.bit_pos == 8)
+	if (client_pid == 0 || info->si_pid != client_pid)
 	{
-		if (g_data.current_char == '\0')
-		{
-			write(1, g_data.message, g_data.msg_len);
-			write(1, "\n", 1);
-			free(g_data.message);
-			g_data.message = NULL;
-			g_data.msg_len = 0;
-		}
-		else
-			append_char(g_data.current_char);
-		reset_state();
+		client_pid = info->si_pid;
+		c = 0;
+		bit = 0;
+	}
+	if (sig == SIGUSR2)
+		c |= (1 << (7 - bit));
+	bit++;
+	if (bit == 8)
+	{
+		write(1, &c, 1);
+		c = 0;
+		bit = 0;
 	}
 }
 
@@ -66,12 +40,19 @@ int	main(void)
 {
 	struct sigaction	sa;
 
-	sa = (struct sigaction){0};
+	ft_printf("Server PID: %d\n", getpid());
 	sa.sa_sigaction = handle_signal;
 	sa.sa_flags = SA_SIGINFO;
-	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);
-	ft_printf("Server PID: %d\n", getpid());
+	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+	{
+		ft_printf("Error setting up SIGUSR1 handler\n");
+		return (1);
+	}
+	if (sigaction(SIGUSR2, &sa, NULL) == -1)
+	{
+		ft_printf("Error setting up SIGUSR2 handler\n");
+		return (1);
+	}
 	while (1)
 		pause();
 	return (0);

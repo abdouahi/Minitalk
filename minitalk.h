@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 00:39:56 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/02/27 22:59:18 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/08 10:55:54 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <limits.h>
-#include "ft_printf/ft_printf.h"
+# include "ft_printf/ft_printf.h"
 
 typedef struct s_server
 {
@@ -27,7 +27,6 @@ typedef struct s_server
 	char	*message;
 	size_t	msg_len;
 }	t_server;
-
 
 int		ft_atoi(char *str);
 
