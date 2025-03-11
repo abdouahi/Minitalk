@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/03/10 00:03:46 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/10 05:45:00 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,12 +45,12 @@ int	main(void)
 	sa.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGUSR1, &sa, NULL) == -1)
 	{
-		ft_printf("Error setting up SIGUSR1 handler\n");
+		ft_printf("SIGUSR1 Error\n");
 		return (1);
 	}
 	if (sigaction(SIGUSR2, &sa, NULL) == -1)
 	{
-		ft_printf("Error setting up SIGUSR2 handler\n");
+		ft_printf("SIGUSR2 Error\n");
 		return (1);
 	}
 	while (1)

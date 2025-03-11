@@ -6,11 +6,11 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 13:51:51 by abdouahi          #+#    #+#             */
-/*   Updated: 2024/12/03 12:30:01 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/11 07:31:05 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_printf.h"
+#include "../minitalk.h"
 
 int	ft_putnbr_hex(unsigned long n, int uppercase)
 {

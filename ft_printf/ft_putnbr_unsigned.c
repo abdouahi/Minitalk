@@ -6,11 +6,11 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 13:11:47 by abdouahi          #+#    #+#             */
-/*   Updated: 2024/12/03 12:29:43 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/11 07:30:59 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_printf.h"
+#include "../minitalk.h"
 
 int	ft_putnbr_unsigned(unsigned int n)
 {

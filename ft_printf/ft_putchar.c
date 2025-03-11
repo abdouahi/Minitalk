@@ -6,11 +6,11 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/11 12:26:23 by abdouahi          #+#    #+#             */
-/*   Updated: 2024/11/23 16:53:08 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/11 07:30:43 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_printf.h"
+#include "../minitalk.h"
 
 int	ft_putchar(char c)
 {
