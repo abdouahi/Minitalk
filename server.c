@@ -6,7 +6,7 @@
 /*   By: abdouahi <abdouahi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/23 15:29:00 by abdouahi          #+#    #+#             */
-/*   Updated: 2025/03/10 05:45:00 by abdouahi         ###   ########.fr       */
+/*   Updated: 2025/03/15 12:14:50 by abdouahi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,9 @@
 
 static void	handle_signal(int sig, siginfo_t *info, void *context)
 {
-	static int				client_pid = 0;
-	static unsigned char	c = 0;
-	static int				bit = 0;
+	static int				client_pid;
+	static unsigned char	c;
+	static int				bit;
 
 	(void)context;
 	if (client_pid == 0 || info->si_pid != client_pid)
